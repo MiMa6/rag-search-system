@@ -4,13 +4,16 @@ A Retrieval Augmented Generation (RAG) pipeline for intelligent document compari
 
 ## 🎯 Overview
 
-This project implements a RAG pipelines that enables sophisticated document comparison and version analysis across multiple file formats. It leverages advanced language models to provide intelligent insights about document differences, versioning, and content evolution.
+This project implements a RAG pipeline that enables sophisticated document comparison and version analysis across multiple file formats. It leverages advanced language models to provide intelligent insights about document differences, versioning, and content evolution.
 
 ## ✨ Features
 
 - Multi-format document support (TXT, DOCX, PDF)
 - Intelligent document version comparison
 - Semantic search capabilities
+- Configurable model and embedding combinations
+- Flexible file type processing
+- Command-line interface for easy execution
 
 ## 🛠️ Installation
 
@@ -24,24 +27,17 @@ poetry install
 ## 🚀 Quick Start
 
 1. Place your documents in the `rag_pipeline/data` directory
-2. Run the pipeline:
+2. Run the pipeline using the command-line interface:
 
-```python
-from rag_pipeline.core import RAGPipeline
+```bash
+# Use default configuration (GPT-4 + text-embedding-3-small)
+poetry run python run_pipeline.py --default
 
-# Initialize the pipeline
-rag = RAGPipeline(
-    data_dir="rag_pipeline/data/your_docs",
-    collection_name="your_collection",
-    model_name="gpt-3.5-turbo"
-)
+# Use legacy configuration (GPT-3.5 + text-embedding-ada-002)
+poetry run python run_pipeline.py --legacy
 
-# Load and index documents
-rag.load_documents()
-
-# Query your documents
-response = rag.query("Compare all versions of Document A")
-print(response)
+# Use balanced configuration (GPT-4 + text-embedding-ada-002)
+poetry run python run_pipeline.py --balanced
 ```
 
 ## 📁 Project Structure
@@ -52,30 +48,59 @@ rag_pipeline/
 ├── tests/          # Test suite
 ├── utils/          # Utility functions
 ├── core.py         # Core pipeline implementation
+├── config.py       # Configuration management
+├── run_pipeline.py # Main entry point
 └── __init__.py     # Package initialization
 ```
 
-## 🔍 Example Usage
+## 🔧 Configuration
 
-The pipeline comes with example scripts demonstrating its capabilities:
+The RAG pipeline supports three main configurations:
 
-- `example.py`: Shows basic usage and document comparison
-- `generate_test_docs.py`: Creates test documents for experimentation
+### Model Configurations
 
-Example queries you can run:
+- **default**: GPT-4 + text-embedding-3-small (newest)
+- **legacy**: GPT-3.5-turbo + text-embedding-ada-002 (older)
+- **balanced**: GPT-4 + text-embedding-ada-002 (mixed)
+
+### File Type Configurations
+
+- **default**: [.pdf, .txt, .docx, .md]
+- **text_only**: [.txt, .md]
+- **documents**: [.pdf, .docx]
+
+### Programmatic Usage
+
+You can also use the pipeline programmatically with custom configurations:
+
+```python
+from rag_pipeline.core import RAGPipeline
+
+# Initialize with specific configuration
+rag = RAGPipeline(
+    data_dir="rag_pipeline/data/your_docs",
+    model_config="default",  # or "legacy" or "balanced"
+    file_types="default"     # or "text_only" or "documents"
+)
+
+# Load and index documents
+rag.load_documents()
+
+# Query your documents
+response = rag.query("Compare all versions of Document A")
+print(response)
+```
+
+## 🔍 Example Queries
+
+The pipeline can answer various questions about your documents:
 
 ```python
 questions = [
     "Compare all versions of the Project Overview document",
     "What are the key differences between Technical Specification versions?",
-    "List documents that need archiving"
+    "List documents that need archiving",
+    "Which version of the Technical Specification is more recent?",
+    "List all documents that appear to be different versions of the same content"
 ]
 ```
-
-## 🔧 Configuration
-
-The RAG pipeline can be configured with the following parameters:
-
-- `data_dir`: Directory containing your documents
-- `collection_name`: Name for your document collection
-- `model_name`: Language model to use (default: "gpt-3.5-turbo")
