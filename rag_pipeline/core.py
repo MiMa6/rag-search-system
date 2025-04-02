@@ -20,6 +20,13 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.readers.file import PDFReader, DocxReader
 import chromadb
 
+from .config import (
+    get_model_config,
+    get_file_types,
+    CHROMA_CONFIG,
+    QUERY_CONFIG,
+)
+
 # Load environment variables
 load_dotenv()
 
@@ -28,25 +35,40 @@ class RAGPipeline:
     def __init__(
         self,
         data_dir: str = "data",
-        collection_name: str = "rag_documents",
-        model_name: str = "gpt-3.5-turbo",
+        collection_name: str = None,
+        model_config: str = "default",
+        file_types: str = "default",
     ):
         """
         Initialize the RAG pipeline.
 
         Args:
             data_dir (str): Directory containing the documents
-            collection_name (str): Name for the ChromaDB collection
-            model_name (str): OpenAI model to use
+            collection_name (str): Name for the ChromaDB collection (optional)
+            model_config (str): Name of the model configuration to use
+            file_types (str): Name of the file types configuration to use
         """
         self.data_dir = Path(data_dir)
+
+        # Get model configuration
+        model_settings = get_model_config(model_config)
+        self.model_name = model_settings["llm_model"]
+        self.embedding_model = model_settings["embedding_model"]
+
+        # Get file types configuration
+        self.file_types = get_file_types(file_types)
+
+        # Setup collection name
+        if collection_name is None:
+            collection_name = f"{CHROMA_CONFIG['collection_prefix']}_{model_config}"
         self.collection_name = collection_name
-        self.model_name = model_name
 
         # Initialize components
-        self.chroma_client = chromadb.PersistentClient(path="./chroma_db")
+        self.chroma_client = chromadb.PersistentClient(
+            path=CHROMA_CONFIG["persist_directory"]
+        )
         self.chroma_collection = self.chroma_client.get_or_create_collection(
-            name=collection_name
+            name=self.collection_name
         )
 
         # Setup LlamaIndex components
@@ -56,8 +78,8 @@ class RAGPipeline:
         )
 
         # Setup embedding and LLM
-        self.embed_model = OpenAIEmbedding()
-        self.llm = OpenAI(model=model_name)
+        self.embed_model = OpenAIEmbedding(model=self.embedding_model)
+        self.llm = OpenAI(model=self.model_name)
 
         # Update global settings
         Settings.llm = self.llm
@@ -71,11 +93,12 @@ class RAGPipeline:
         Load documents from the data directory.
 
         Args:
-            file_types: List of file extensions to include (e.g., [".pdf", ".txt"])
+            file_types: Optional list of file extensions to include (overrides config)
         """
-        if not file_types:
-            file_types = [".pdf", ".txt", ".docx", ".md"]
+        if file_types is None:
+            file_types = self.file_types
 
+        # Read documents with directory reader
         reader = SimpleDirectoryReader(
             input_dir=str(self.data_dir),
             required_exts=file_types,
@@ -95,13 +118,13 @@ class RAGPipeline:
         )
         print(f"Loaded and indexed {len(documents)} documents")
 
-    def query(self, question: str, response_mode: str = "compact") -> str:
+    def query(self, question: str, response_mode: str = None) -> str:
         """
         Query the RAG pipeline.
 
         Args:
             question: The question to ask
-            response_mode: Response mode ("compact" or "tree_summarize")
+            response_mode: Response mode (optional, defaults to config setting)
 
         Returns:
             str: The response from the model
@@ -110,6 +133,11 @@ class RAGPipeline:
             raise ValueError(
                 "No documents have been loaded. Call load_documents() first."
             )
+
+        if response_mode is None:
+            response_mode = QUERY_CONFIG["default_response_mode"]
+        elif response_mode not in QUERY_CONFIG["supported_response_modes"]:
+            raise ValueError(f"Unsupported response mode: {response_mode}")
 
         query_engine = self.index.as_query_engine(
             response_mode=response_mode,
