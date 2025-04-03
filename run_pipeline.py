@@ -1,84 +1,81 @@
 """
 Main entry point for running the RAG pipeline with different configurations.
-
-This script provides a command-line interface to run the RAG pipeline with various
-model and file type configurations. It supports three main configurations:
-- default: GPT-4 + text-embedding-3-small (newest)
-- legacy: GPT-3.5-turbo + text-embedding-ada-002 (older)
-- balanced: GPT-4 + text-embedding-ada-002 (mixed)
-
-Usage:
-    poetry run python run_pipeline.py --default
-    poetry run python run_pipeline.py --legacy
-    poetry run python run_pipeline.py --balanced
 """
 
 import argparse
-from rag_pipeline.core import RAGPipeline
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Run RAG pipeline with specific configuration"
-    )
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--default",
-        action="store_true",
-        help="Use default configuration (GPT-4 + text-embedding-3-small)",
-    )
-    group.add_argument(
-        "--legacy",
-        action="store_true",
-        help="Use legacy configuration (GPT-3.5 + text-embedding-ada-002)",
-    )
-    group.add_argument(
-        "--balanced",
-        action="store_true",
-        help="Use balanced configuration (GPT-4 + text-embedding-ada-002)",
-    )
-
-    return parser.parse_args()
+from pathlib import Path
+from rag_pipeline import RAGPipeline
+from rag_pipeline.config import get_model_config, get_file_types, MODEL_CONFIGS
 
 
 def main():
-    args = parse_args()
+    parser = argparse.ArgumentParser(
+        description="Run RAG pipeline with different configurations"
+    )
 
-    # Initialize all configurations
-    configurations = {
-        "default": RAGPipeline(
-            data_dir="rag_pipeline/data/test_docs",
-            model_config="default",
-            file_types="default",
-        ),
-        "legacy": RAGPipeline(
-            data_dir="rag_pipeline/data/test_docs",
-            model_config="legacy",
-            file_types="documents",  # Only process PDF and DOCX files
-        ),
-        "balanced": RAGPipeline(
-            data_dir="rag_pipeline/data/test_docs",
-            model_config="balanced",
-            file_types="text_only",  # Only process text and markdown files
-        ),
-    }
+    # Model configuration arguments
+    model_group = parser.add_mutually_exclusive_group(required=True)
+    model_group.add_argument(
+        "--default",
+        action="store_true",
+        help="Use default configuration (gpt-4o + text-embedding-3-large)",
+    )
+    model_group.add_argument(
+        "--fast",
+        action="store_true",
+        help="Use fast configuration (gpt-4 + text-embedding-3-small)",
+    )
+    model_group.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)",
+    )
+    model_group.add_argument(
+        "--azure-default",
+        action="store_true",
+        help="Use Azure OpenAI default configuration",
+    )
+    model_group.add_argument(
+        "--azure-fast", action="store_true", help="Use Azure OpenAI fast configuration"
+    )
 
-    # Select the configuration based on command line argument
+    # Optional arguments
+    parser.add_argument(
+        "--data-dir",
+        type=str,
+        default="rag_pipeline/data",  # Updated default path
+        help="Directory containing documents",
+    )
+    parser.add_argument(
+        "--file-types",
+        type=str,
+        default="default",
+        choices=["default", "text_only", "documents"],
+        help="File types to process",
+    )
+
+    args = parser.parse_args()
+
+    # Determine model configuration
     if args.default:
-        selected_config = "default"
+        model_config = "default"
+    elif args.fast:
+        model_config = "fast"
     elif args.legacy:
-        selected_config = "legacy"
-    else:  # balanced
-        selected_config = "balanced"
+        model_config = "legacy"
+    elif args.azure_default:
+        model_config = "azure_default"
+    elif args.azure_fast:
+        model_config = "azure_fast"
 
-    rag = configurations[selected_config]
+    # Initialize pipeline
+    pipeline = RAGPipeline(
+        data_dir=args.data_dir, model_config=model_config, file_types=args.file_types
+    )
 
-    # Load and index documents for selected configuration
-    print(f"\nLoading documents for {rag.collection_name}...")
-    print(f"Using model: {rag.model_name}")
-    print(f"Using embedding: {rag.embedding_model}")
-    print(f"Processing file types: {rag.file_types}")
-    rag.load_documents()
+    # Load and process documents
+    print(f"Loading documents from {args.data_dir}...")
+    pipeline.load_documents()
 
     # Example queries for document comparison
     questions = [
@@ -90,12 +87,12 @@ def main():
 
     # Query the documents using selected configuration
     print(f"\n{'='*80}")
-    print(f"Using {rag.collection_name} pipeline ({selected_config} configuration)")
+    print(f"Using {pipeline.collection_name} pipeline ({model_config} configuration)")
     print(f"{'='*80}")
     for question in questions:
         print(f"\nQuestion: {question}")
         print("-" * 80)
-        response = rag.query(question)
+        response = pipeline.query(question)
         print(f"Answer: {response}")
 
 

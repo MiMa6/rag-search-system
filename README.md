@@ -30,14 +30,20 @@ poetry install
 2. Run the pipeline using the command-line interface:
 
 ```bash
-# Use default configuration (GPT-4 + text-embedding-3-small)
+# Use default configuration (gpt-4o + text-embedding-3-large)
 poetry run python run_pipeline.py --default
 
-# Use legacy configuration (GPT-3.5 + text-embedding-ada-002)
+# Use fast configuration (gpt-4 + text-embedding-3-small)
+poetry run python run_pipeline.py --fast
+
+# Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)
 poetry run python run_pipeline.py --legacy
 
-# Use balanced configuration (GPT-4 + text-embedding-ada-002)
-poetry run python run_pipeline.py --balanced
+# Use Azure OpenAI default configuration
+poetry run python run_pipeline.py --azure-default
+
+# Use Azure OpenAI fast configuration
+poetry run python run_pipeline.py --azure-fast
 ```
 
 ## 📁 Project Structure
@@ -57,11 +63,15 @@ rag_pipeline/
 
 The RAG pipeline supports three main configurations:
 
-### Model Configurations
+1. **OpenAI Configurations**:
 
-- **default**: GPT-4 + text-embedding-3-small (newest)
-- **legacy**: GPT-3.5-turbo + text-embedding-ada-002 (older)
-- **balanced**: GPT-4 + text-embedding-ada-002 (mixed)
+   - `default`: Uses gpt-4o with text-embedding-3-large (latest and most capable)
+   - `fast`: Uses gpt-4 with text-embedding-3-small (faster processing)
+   - `legacy`: Uses gpt-3.5-turbo with text-embedding-3-small (backward compatibility)
+
+2. **Azure OpenAI Configurations**:
+   - `azure_default`: Uses Azure GPT-4 with text-embedding-ada-002
+   - `azure_fast`: Uses Azure GPT-3.5-turbo with text-embedding-ada-002
 
 ### File Type Configurations
 
@@ -74,22 +84,60 @@ The RAG pipeline supports three main configurations:
 You can also use the pipeline programmatically with custom configurations:
 
 ```python
-from rag_pipeline.core import RAGPipeline
+from rag_pipeline import RAGPipeline
 
-# Initialize with specific configuration
-rag = RAGPipeline(
-    data_dir="rag_pipeline/data/your_docs",
-    model_config="default",  # or "legacy" or "balanced"
-    file_types="default"     # or "text_only" or "documents"
+# Initialize with default configuration
+pipeline = RAGPipeline(
+    data_dir="path/to/documents",
+    model_config="default"  # or "fast", "legacy", "azure_default", "azure_fast"
 )
 
 # Load and index documents
+pipeline.load_documents()
+
+# Query the documents
+response = pipeline.query("Your question here")
+```
+
+### Command Line Usage
+
+```bash
+# Use default configuration (gpt-4o + text-embedding-3-large)
+poetry run python run_pipeline.py --default
+
+# Use fast configuration (gpt-4 + text-embedding-3-small)
+poetry run python run_pipeline.py --fast
+
+# Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)
+poetry run python run_pipeline.py --legacy
+
+# Use Azure OpenAI default configuration
+poetry run python run_pipeline.py --azure-default
+
+# Use Azure OpenAI fast configuration
+poetry run python run_pipeline.py --azure-fast
+```
+
+### Azure OpenAI Usage
+
+# Initialize with specific configuration
+
+rag = RAGPipeline(
+data_dir="rag_pipeline/data/your_docs",
+model_config="default", # or "legacy" or "balanced"
+file_types="default" # or "text_only" or "documents"
+)
+
+# Load and index documents
+
 rag.load_documents()
 
 # Query your documents
+
 response = rag.query("Compare all versions of Document A")
 print(response)
-```
+
+````
 
 ## 🔍 Example Queries
 
@@ -103,4 +151,4 @@ questions = [
     "Which version of the Technical Specification is more recent?",
     "List all documents that appear to be different versions of the same content"
 ]
-```
+````

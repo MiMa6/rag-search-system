@@ -4,7 +4,8 @@ Core implementation of the RAG pipeline using LlamaIndex.
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
+from datetime import datetime
 
 from dotenv import load_dotenv
 from llama_index.core import (
@@ -12,10 +13,13 @@ from llama_index.core import (
     SimpleDirectoryReader,
     StorageContext,
     VectorStoreIndex,
+    Document,
 )
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding, OpenAIEmbeddingMode
+from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.llms.openai import OpenAI
+from llama_index.llms.azure_openai import AzureOpenAI
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.readers.file import PDFReader, DocxReader
 import chromadb
@@ -52,6 +56,7 @@ class RAGPipeline:
 
         # Get model configuration
         model_settings = get_model_config(model_config)
+        self.provider = model_settings["provider"]
         self.model_name = model_settings["llm_model"]
         self.embedding_model = model_settings["embedding_model"]
 
@@ -77,9 +82,29 @@ class RAGPipeline:
             vector_store=self.vector_store
         )
 
-        # Setup embedding and LLM
-        self.embed_model = OpenAIEmbedding(model=self.embedding_model)
-        self.llm = OpenAI(model=self.model_name)
+        # Setup embedding and LLM based on provider
+        if self.provider == "azure":
+            # Azure OpenAI setup
+            self.embed_model = AzureOpenAIEmbedding(
+                model=self.embedding_model,
+                deployment_name=self.embedding_model,
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                azure_endpoint=model_settings["api_base"],
+                api_version=model_settings["api_version"],
+            )
+            self.llm = AzureOpenAI(
+                model=self.model_name,
+                deployment_name=self.model_name,
+                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                azure_endpoint=model_settings["api_base"],
+                api_version=model_settings["api_version"],
+            )
+        else:
+            # OpenAI setup
+            self.embed_model = OpenAIEmbedding(
+                model=self.embedding_model, mode=OpenAIEmbeddingMode.SIMILARITY_MODE
+            )
+            self.llm = OpenAI(model=self.model_name)
 
         # Update global settings
         Settings.llm = self.llm
@@ -87,6 +112,7 @@ class RAGPipeline:
         Settings.node_parser = SentenceSplitter()
 
         self.index = None
+        self._processed_files: Set[str] = set()
 
     def load_documents(self, file_types: Optional[List[str]] = None) -> None:
         """

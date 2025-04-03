@@ -1,70 +1,136 @@
 """
 Configuration settings for the RAG pipeline.
+
+This module provides configuration management for the RAG pipeline, including:
+- Model configurations for both OpenAI and Azure OpenAI
+- File type handling configurations
+- ChromaDB storage settings
+- Query engine settings
+
+Model Configurations:
+-------------------
+1. OpenAI Configurations:
+   - default: Uses gpt-4o (latest) with text-embedding-3-large
+   - fast: Uses gpt-4 with text-embedding-3-small for faster processing
+   - legacy: Uses gpt-3.5-turbo with text-embedding-3-small (backward compatibility)
+
+2. Azure OpenAI Configurations:
+   - azure_default: Uses Azure GPT-4 with text-embedding-ada-002
+   - azure_fast: Uses Azure GPT-3.5-turbo with text-embedding-ada-002
+
+Environment Variables Required:
+----------------------------
+For OpenAI:
+    - OPENAI_API_KEY: Your OpenAI API key
+
+For Azure OpenAI:
+    - AZURE_OPENAI_API_KEY: Your Azure OpenAI API key
+    - Update api_base in azure configurations with your Azure OpenAI endpoint
+
+```
 """
 
-from typing import Dict, List
+from typing import Dict, List, Literal
 
-# OpenAI model configurations
-MODEL_CONFIG = {
+# Provider types
+ProviderType = Literal["openai", "azure"]
+
+# Model configurations
+MODEL_CONFIGS: Dict[str, Dict[str, str]] = {
+    # OpenAI configurations
     "default": {
+        "provider": "openai",
+        "llm_model": "gpt-4o",
+        "embedding_model": "text-embedding-3-large",
+    },
+    "fast": {
+        "provider": "openai",
         "llm_model": "gpt-4",
         "embedding_model": "text-embedding-3-small",
     },
     "legacy": {
+        "provider": "openai",
         "llm_model": "gpt-3.5-turbo",
-        "embedding_model": "text-embedding-ada-002",
+        "embedding_model": "text-embedding-3-small",
     },
-    "balanced": {
-        "llm_model": "gpt-4",
-        "embedding_model": "text-embedding-ada-002",
+    # Azure OpenAI configurations
+    "azure_default": {
+        "provider": "azure",
+        "llm_model": "gpt-4",  # Azure deployment name
+        "embedding_model": "text-embedding-ada-002",  # Azure deployment name
+        "api_base": "YOUR_AZURE_OPENAI_ENDPOINT",
+        "api_version": "2024-02-15-preview",
+    },
+    "azure_fast": {
+        "provider": "azure",
+        "llm_model": "gpt-35-turbo",  # Azure deployment name
+        "embedding_model": "text-embedding-ada-002",  # Azure deployment name
+        "api_base": "YOUR_AZURE_OPENAI_ENDPOINT",
+        "api_version": "2024-02-15-preview",
     },
 }
 
-# Supported file types and their readers
-FILE_TYPES = {
-    "default": [".pdf", ".txt", ".docx", ".md"],
+# File type configurations
+FILE_TYPES: Dict[str, List[str]] = {
+    "default": [".pdf", ".docx", ".txt", ".md"],
     "text_only": [".txt", ".md"],
     "documents": [".pdf", ".docx"],
 }
 
-# ChromaDB settings
+# ChromaDB configuration
 CHROMA_CONFIG = {
-    "persist_directory": "./chroma_db",
-    "collection_prefix": "rag_documents",
+    "persist_directory": "chroma_db",
+    "collection_prefix": "rag_collection",
 }
 
-# Query engine settings
+# Query configuration
 QUERY_CONFIG = {
     "default_response_mode": "compact",
-    "supported_response_modes": ["compact", "tree_summarize"],
+    "supported_response_modes": ["compact", "refine", "tree_summarize"],
 }
 
 
 def get_model_config(config_name: str = "default") -> Dict[str, str]:
     """
-    Get model configuration by name.
+    Get the model configuration for the specified name.
 
     Args:
-        config_name: Name of the configuration to use
+        config_name: Name of the configuration to use. Options are:
+            - OpenAI: "default", "fast", "legacy"
+            - Azure OpenAI: "azure_default", "azure_fast"
 
     Returns:
-        Dictionary containing LLM and embedding model names
+        Dict containing model settings including:
+            - provider: "openai" or "azure"
+            - llm_model: Model name/deployment name
+            - embedding_model: Embedding model name/deployment name
+            - api_base: Azure OpenAI endpoint (for Azure configs)
+            - api_version: Azure OpenAI API version (for Azure configs)
+
+    Raises:
+        ValueError: If the configuration name is not recognized
     """
-    if config_name not in MODEL_CONFIG:
-        raise ValueError(f"Unsupported model configuration: {config_name}")
-    return MODEL_CONFIG[config_name]
+    if config_name not in MODEL_CONFIGS:
+        raise ValueError(f"Unknown model configuration: {config_name}")
+    return MODEL_CONFIGS[config_name]
 
 
 def get_file_types(config_name: str = "default") -> List[str]:
     """
-    Get file types configuration by name.
+    Get the file types configuration for the specified name.
 
     Args:
-        config_name: Name of the configuration to use
+        config_name: Name of the configuration to use. Options are:
+            - "default": All supported file types
+            - "text_only": Text and markdown files
+            - "documents": PDF and DOCX files
 
     Returns:
-        List of supported file extensions
+        List of file extensions
+
+    Raises:
+        ValueError: If the configuration name is not recognized
     """
     if config_name not in FILE_TYPES:
-        raise ValueError(f"Unsupported file types configuration: {config_name}")
+        raise ValueError(f"Unknown file types configuration: {config_name}")
     return FILE_TYPES[config_name]
