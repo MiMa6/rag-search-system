@@ -7,17 +7,6 @@ This module provides configuration management for the RAG pipeline, including:
 - ChromaDB storage settings
 - Query engine settings
 
-Model Configurations:
--------------------
-1. OpenAI Configurations:
-   - default: Uses gpt-4o (latest) with text-embedding-3-large
-   - fast: Uses gpt-4 with text-embedding-3-small for faster processing
-   - legacy: Uses gpt-3.5-turbo with text-embedding-3-small (backward compatibility)
-
-2. Azure OpenAI Configurations:
-   - azure_default: Uses Azure GPT-4 with text-embedding-ada-002
-   - azure_fast: Uses Azure GPT-3.5-turbo with text-embedding-ada-002
-
 Environment Variables Required:
 ----------------------------
 For OpenAI:
