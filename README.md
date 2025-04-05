@@ -1,4 +1,4 @@
-# RAG Pipeline
+# RAG Search System
 
 A Retrieval Augmented Generation (RAG) pipeline for intelligent document comparison and analysis.
 
