@@ -4,30 +4,64 @@ A Retrieval Augmented Generation (RAG) pipeline for intelligent document compari
 
 ## 🎯 Overview
 
-This project implements a RAG pipeline that enables sophisticated document comparison and version analysis across multiple file formats. It leverages advanced language models to provide intelligent insights about document differences, versioning, and content evolution.
+This project implements a RAG search system that enables sophisticated document comparison and version analysis across multiple file formats. It leverages LlamaIndex and advanced language models to provide intelligent insights about document differences, versioning, and content evolution.
 
 ## ✨ Features
 
-- Multi-format document support (TXT, DOCX, PDF)
-- Intelligent document version comparison
-- Semantic search capabilities
-- Configurable model and embedding combinations
-- Flexible file type processing
+- Multi-format document support (PDF, DOCX, TXT, MD)
+- Intelligent document version comparison and analysis
+- Semantic search capabilities across document collections
+- Document version tracking and identification
+- Multiple configurable model and embedding combinations
+- ChromaDB vector database for persistent storage
+- Modular architecture with separate components for:
+  - Document loading and processing
+  - Vector index management
+  - Query processing
+- Support for both OpenAI and Azure OpenAI services
 - Command-line interface for easy execution
+- Example scripts for document generation, index creation, and querying
 
 ## 🛠️ Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/MiMa6/rag-pipelines
-# Install required libraries
+git clone https://github.com/MiMa6/rag-search-system
+cd rag-search-system
+
+# Install dependencies using Poetry
 poetry install
 ```
 
 ## 🚀 Quick Start
 
-1. Place your documents in the `rag_pipeline/data` directory
-2. Run the pipeline using the command-line interface:
+The usage consists of three main steps:
+
+### Step 1: Generate Test Documents (Optional)
+
+```bash
+# Generate sample document versions for testing
+python example_generate_docs.py
+```
+
+### Step 2: Create Index
+
+```bash
+# Index your documents with the default configuration
+python example_create_index.py --data-dir rag_pipeline/data/test_docs --collection-name example_collection
+```
+
+### Step 3: Query the Index
+
+```bash
+# Query using the interactive mode
+python example_query.py --collection-name example_collection
+
+# List available collections
+python example_query.py --list-collections
+```
+
+### Running whole "Pipeline" by one command
 
 ```bash
 # Use default configuration (gpt-4o + text-embedding-3-large)
@@ -50,18 +84,37 @@ poetry run python run_pipeline.py --azure-fast
 
 ```
 rag_pipeline/
-├── data/           # Document storage
-├── tests/          # Test suite
-├── utils/          # Utility functions
-├── core.py         # Core pipeline implementation
-├── config.py       # Configuration management
-├── run_pipeline.py # Main entry point
-└── __init__.py     # Package initialization
+├── core.py           # RAG pipeline implementation
+├── config.py         # Configuration settings
+├── data_loader.py    # Document loading module
+├── query_engine.py   # Query engine module
+├── chroma_manager.py # ChromaDB management module
+├── __init__.py       # Package initialization
+├── data/             # Document storage
+│   └── test_docs/    # Sample test documents
+├── tests/            # Test suite
+└── utils/            # Utility functions
+
+# Scripts
+run_pipeline.py          # Main entry point for full pipeline run
+
+## Step by step
+example_generate_docs.py # Document generation wrapper
+example_create_index.py  # Index creation example
+example_query.py         # Query interactively
+
+## Data inspection
+inspect_chroma.py        # ChromaDB inspection tool
+
+# Data storage
+chroma_db/               # ChromaDB persistent storage
 ```
 
 ## 🔧 Configuration
 
-The RAG pipeline supports three main configurations:
+The RAG pipeline supports multiple configurations for different use cases:
+
+### Model Configurations
 
 1. **OpenAI Configurations**:
 
@@ -79,76 +132,85 @@ The RAG pipeline supports three main configurations:
 - **text_only**: [.txt, .md]
 - **documents**: [.pdf, .docx]
 
-### Programmatic Usage
+### Environment Variables
 
-You can also use the pipeline programmatically with custom configurations:
+Create a `.env` file in the project root with your API keys:
+
+```
+OPENAI_API_KEY=your_openai_api_key
+AZURE_OPENAI_API_KEY=your_azure_openai_api_key
+```
+
+To use Azure OpenAI, update the endpoint URLs in the configuration:
+
+```python
+# Update in rag_pipeline/config.py
+"api_base": "YOUR_AZURE_OPENAI_ENDPOINT",
+```
+
+## 💻 Programmatic Usage
+
+### Complete Pipeline
 
 ```python
 from rag_pipeline import RAGPipeline
 
-# Initialize with default configuration
+# Initialize with preferred configuration
 pipeline = RAGPipeline(
     data_dir="path/to/documents",
-    model_config="default"  # or "fast", "legacy", "azure_default", "azure_fast"
+    model_config="default",  # or "fast", "legacy", "azure_default", "azure_fast"
+    file_types="default"     # or "text_only", "documents"
 )
 
 # Load and index documents
 pipeline.load_documents()
 
 # Query the documents
-response = pipeline.query("Your question here")
-```
-
-### Command Line Usage
-
-```bash
-# Use default configuration (gpt-4o + text-embedding-3-large)
-poetry run python run_pipeline.py --default
-
-# Use fast configuration (gpt-4 + text-embedding-3-small)
-poetry run python run_pipeline.py --fast
-
-# Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)
-poetry run python run_pipeline.py --legacy
-
-# Use Azure OpenAI default configuration
-poetry run python run_pipeline.py --azure-default
-
-# Use Azure OpenAI fast configuration
-poetry run python run_pipeline.py --azure-fast
-```
-
-### Azure OpenAI Usage
-
-# Initialize with specific configuration
-
-rag = RAGPipeline(
-data_dir="rag_pipeline/data/your_docs",
-model_config="default", # or "legacy" or "balanced"
-file_types="default" # or "text_only" or "documents"
-)
-
-# Load and index documents
-
-rag.load_documents()
-
-# Query your documents
-
-response = rag.query("Compare all versions of Document A")
+response = pipeline.query("Compare all versions of Document A")
 print(response)
+```
 
-````
+### Component-based Approach
+
+```python
+from rag_pipeline.data_loader import DataLoader
+from rag_pipeline.chroma_manager import ChromaDBManager
+from rag_pipeline.query_engine import RAGQueryEngine
+
+# 1. Load documents
+data_loader = DataLoader(data_dir="path/to/documents")
+documents = data_loader.load_documents()
+
+# 2. Create or update index
+chroma_manager = ChromaDBManager(collection_name="my_collection")
+index = chroma_manager.create_index(documents)
+
+# 3. Query the index
+query_engine = RAGQueryEngine(collection_name="my_collection")
+response = query_engine.query("What are the key differences between document versions?")
+print(response)
+```
 
 ## 🔍 Example Queries
 
 The pipeline can answer various questions about your documents:
 
-```python
-questions = [
-    "Compare all versions of the Project Overview document",
-    "What are the key differences between Technical Specification versions?",
-    "List documents that need archiving",
-    "Which version of the Technical Specification is more recent?",
-    "List all documents that appear to be different versions of the same content"
-]
-````
+```
+"Compare all versions of the Project Overview document. What are the key differences between versions?"
+"Which version of the Technical Specification is more recent, and what major changes were made?"
+"List all documents that appear to be different versions of the same content, ordered by date."
+"Identify any documents that could be considered outdated and should be archived, explaining why."
+```
+
+## 📊 Inspecting the Vector Database
+
+The project includes a dedicated tool for inspecting and managing ChromaDB collections:
+
+```bash
+# List all collections
+python inspect_chroma.py --list
+
+# View documents in a specific collection
+python inspect_chroma.py --collection your_collection_name
+
+```
