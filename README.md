@@ -61,6 +61,34 @@ python example_query.py --collection-name example_collection
 python example_query.py --list-collections
 ```
 
+### Web Interface
+
+A web interface is available for querying the RAG system. The interface is built with Svelte and Express.js, providing a Simple way to interact with the system.
+
+For setup and usage instructions, see the [Web Interface Documentation](web/README.md).
+
+Key features:
+
+- Real-time query responses
+- Chat-like interface for question-answer interactions
+- Debug logging for backend operations
+
+To start the web interface:
+
+```bash
+# Start the backend server
+cd web/backend
+npm install
+npm run dev
+
+# In a new terminal, start the frontend
+cd web/frontend
+npm install
+npm run dev
+```
+
+Then visit http://localhost:5173 in your browser.
+
 ### Running whole "Pipeline" by one command
 
 ```bash
@@ -94,6 +122,13 @@ rag_pipeline/
 │   └── test_docs/    # Sample test documents
 ├── tests/            # Test suite
 └── utils/            # Utility functions
+
+web/                  # Web interface
+├── frontend/         # Svelte + Vite frontend
+│   ├── src/         # Frontend source code
+│   └── public/      # Static assets
+└── backend/         # Express.js backend
+    └── server.js    # Backend server implementation
 
 # Scripts
 run_pipeline.py          # Main entry point for full pipeline run
