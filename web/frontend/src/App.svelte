@@ -4,45 +4,65 @@
     content: string;
   }
 
-  let question: string = "";
+  let question = "";
+  let response = "";
+  let loading = false;
+  let error = "";
+  let selectedCollection = "test_colection"; // default collection
+  let collections = ["test_colection", "example_collection"]; // we can fetch this later
   let messages: Message[] = [];
-  let loading: boolean = false;
 
   async function handleSubmit() {
-    if (!question.trim() || loading) return;
+    if (!question.trim()) return;
 
-    // Add user message
-    messages = [...messages, { type: "user", content: question }];
+    // Add user message first
     const currentQuestion = question;
-    question = "";
+    messages = [...messages, { type: "user", content: question }];
+    question = ""; // Clear input after sending
+
     loading = true;
+    error = "";
 
     try {
-      const response = await fetch("http://localhost:3000/api/query", {
+      const res = await fetch("http://localhost:3000/api/query", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: currentQuestion }),
+        body: JSON.stringify({
+          question: currentQuestion,
+          collection: selectedCollection,
+        }),
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      // Add assistant message with the cleaned response
+      if (data.success) {
+        response = data.response;
+        messages = [
+          ...messages,
+          {
+            type: "assistant",
+            content: response.replace(/^Response:\s*/i, "").trim(),
+          },
+        ];
+      } else {
+        error = data.error || "An error occurred";
+        messages = [
+          ...messages,
+          {
+            type: "assistant",
+            content: `Error: ${error}`,
+          },
+        ];
+      }
+    } catch (e: any) {
+      error = e.message;
       messages = [
         ...messages,
         {
           type: "assistant",
-          content: data.response.replace(/^Response:\s*/i, "").trim(),
-        },
-      ];
-    } catch (error) {
-      console.error("Error:", error);
-      messages = [
-        ...messages,
-        {
-          type: "assistant",
-          content: "Sorry, there was an error processing your request.",
+          content: `Error: ${e.message}`,
         },
       ];
     } finally {
@@ -74,6 +94,24 @@
             <h2 class="text-2xl font-bold mb-8 text-center text-gray-800">
               RAG Query Interface
             </h2>
+
+            <div class="mb-6">
+              <label
+                for="collection"
+                class="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Select Collection
+              </label>
+              <select
+                id="collection"
+                bind:value={selectedCollection}
+                class="w-full p-2 border rounded-md bg-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              >
+                {#each collections as collection}
+                  <option value={collection}>{collection}</option>
+                {/each}
+              </select>
+            </div>
 
             <!-- Chat Messages -->
             <div

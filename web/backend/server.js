@@ -43,7 +43,9 @@ async function runRAGQuery(question) {
 
 app.post("/api/query", async (req, res) => {
   try {
-    const { question } = req.body;
+    const { question, collection = "test_colection" } = req.body;
+    console.log("[DEBUG] Received query:", { question, collection });
+
     if (!question) {
       return res.status(400).json({
         success: false,
@@ -51,16 +53,36 @@ app.post("/api/query", async (req, res) => {
       });
     }
 
-    console.log("[DEBUG] Received question:", question);
-    const response = await runRAGQuery(question);
+    const options = {
+      mode: "text",
+      pythonPath: "python",
+      scriptPath: join(__dirname, "handlers"),
+      args: [question, collection],
+    };
 
-    if (!response.success) {
-      return res.status(500).json(response);
-    }
-
-    res.json(response);
+    PythonShell.run("rag_handler.py", options)
+      .then((results) => {
+        if (results && results.length > 0) {
+          const response = JSON.parse(results[0]);
+          console.log("[DEBUG] RAG response:", response);
+          res.json(response);
+        } else {
+          console.error("[ERROR] No response from RAG handler");
+          res.status(500).json({
+            success: false,
+            error: "No response from RAG handler",
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("[ERROR] RAG handler failed:", err);
+        res.status(500).json({
+          success: false,
+          error: "Failed to process query",
+        });
+      });
   } catch (error) {
-    console.error("[ERROR] Query processing failed:", error);
+    console.error("[ERROR] Server error:", error);
     res.status(500).json({
       success: false,
       error: "Internal server error",
