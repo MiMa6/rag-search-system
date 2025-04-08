@@ -12,7 +12,7 @@ from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
-from .config import get_model_config, CHROMA_CONFIG
+from ..config import get_model_config, CHROMA_CONFIG
 
 
 class ChromaDBManager:

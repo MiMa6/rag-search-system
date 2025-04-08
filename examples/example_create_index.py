@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import the RAG pipeline components
-from rag_pipeline.data_loader import DataLoader
-from rag_pipeline.chroma_manager import ChromaDBManager
+from rag_pipeline.engine.data_loader import DataLoader
+from rag_pipeline.db.chroma_manager import ChromaDBManager
 
 
 def main():

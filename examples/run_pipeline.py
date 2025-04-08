@@ -4,7 +4,7 @@ Main entry point for running the RAG pipeline with different configurations.
 
 import argparse
 from pathlib import Path
-from rag_pipeline import RAGPipeline
+from rag_pipeline.core.core import RAGPipeline
 from rag_pipeline.config import get_model_config, get_file_types, MODEL_CONFIGS
 
 
@@ -43,7 +43,7 @@ def main():
     parser.add_argument(
         "--data-dir",
         type=str,
-        default="rag_pipeline/data",  # Updated default path
+        default="rag_pipeline/data/test_docs",  # Updated default path
         help="Directory containing documents",
     )
     parser.add_argument(

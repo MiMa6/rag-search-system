@@ -111,38 +111,24 @@ poetry run python run_pipeline.py --azure-fast
 ## 📁 Project Structure
 
 ```
-rag_pipeline/
-├── core.py           # RAG pipeline implementation
-├── config.py         # Configuration settings
-├── data_loader.py    # Document loading module
-├── query_engine.py   # Query engine module
-├── chroma_manager.py # ChromaDB management module
-├── __init__.py       # Package initialization
-├── data/             # Document storage
-│   └── test_docs/    # Sample test documents
-├── tests/            # Test suite
-└── utils/            # Utility functions
-
-web/                  # Web interface
-├── frontend/         # Svelte + Vite frontend
-│   ├── src/         # Frontend source code
-│   └── public/      # Static assets
-└── backend/         # Express.js backend
-    └── server.js    # Backend server implementation
-
-# Scripts
-run_pipeline.py          # Main entry point for full pipeline run
-
-## Step by step
-example_generate_docs.py # Document generation wrapper
-example_create_index.py  # Index creation example
-example_query.py         # Query interactively
-
-## Data inspection
-inspect_chroma.py        # ChromaDB inspection tool
-
-# Data storage
-chroma_db/               # ChromaDB persistent storage
+.
+├── rag_pipeline/         # Main package
+│   ├── core/            # Core RAG pipeline functionality
+│   ├── db/             # Database operations
+│   ├── engine/         # Data loading and query processing
+│   ├── config/         # Configuration management
+│   ├── tools/          # Utility tools
+│   ├── utils/          # General utilities
+│   ├── scripts/        # Maintenance and utility scripts
+│   ├── data/           # Data storage
+│   │   └── chroma_db/  # ChromaDB persistent storage
+│   └── tests/          # Test files
+├── examples/            # Example usage scripts
+│   ├── run_pipeline.py # Main pipeline script
+│   └── ...
+├── web/                # Web interface
+├── pyproject.toml      # Project dependencies
+└── .env               # Environment variables
 ```
 
 ## 🔧 Configuration

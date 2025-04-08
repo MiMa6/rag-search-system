@@ -10,7 +10,7 @@ import os
 
 # Import the test document generator
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from generate_test_docs import main as generate_docs
+from examples.generate_test_docs import main as generate_docs
 
 if __name__ == "__main__":
     print("Step 1: Generating test documents...")

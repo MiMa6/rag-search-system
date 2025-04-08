@@ -68,8 +68,9 @@ FILE_TYPES: Dict[str, List[str]] = {
 
 # ChromaDB configuration
 CHROMA_CONFIG = {
-    "persist_directory": "chroma_db",
     "collection_prefix": "rag_collection",
+    "persist_directory": "data/chroma_db",
+    "anonymized_telemetry": False,
 }
 
 # Query configuration

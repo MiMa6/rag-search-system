@@ -8,8 +8,8 @@ from llama_index.core import Settings
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.azure_openai import AzureOpenAI
 
-from .config import get_model_config, QUERY_CONFIG
-from .chroma_manager import ChromaDBManager
+from ..config import get_model_config, QUERY_CONFIG
+from ..db.chroma_manager import ChromaDBManager
 
 
 class RAGQueryEngine:
