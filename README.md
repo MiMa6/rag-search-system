@@ -41,24 +41,24 @@ The usage consists of three main steps:
 
 ```bash
 # Generate sample document versions for testing
-python example_generate_docs.py
+poetry run python examples/example_generate_docs.py
 ```
 
 ### Step 2: Create Index
 
 ```bash
 # Index your documents with the default configuration
-python example_create_index.py --data-dir rag_pipeline/data/test_docs --collection-name example_collection
+poetry run python examples/example_create_index.py --data-dir rag_pipeline/data/test_docs --collection-name example_collection
 ```
 
 ### Step 3: Query the Index
 
 ```bash
 # Query using the interactive mode
-python example_query.py --collection-name example_collection
+poetry run python examples/example_query.py --collection-name example_collection
 
 # List available collections
-python example_query.py --list-collections
+poetry run python examples/example_query.py --list-collections
 ```
 
 ### Web Interface
@@ -93,19 +93,19 @@ Then visit http://localhost:5173 in your browser.
 
 ```bash
 # Use default configuration (gpt-4o + text-embedding-3-large)
-poetry run python run_pipeline.py --default
+poetry run python examples/run_pipeline.py --default
 
 # Use fast configuration (gpt-4 + text-embedding-3-small)
-poetry run python run_pipeline.py --fast
+poetry run python examples/run_pipeline.py --fast
 
 # Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)
-poetry run python run_pipeline.py --legacy
+poetry run python examples/run_pipeline.py --legacy
 
 # Use Azure OpenAI default configuration
-poetry run python run_pipeline.py --azure-default
+poetry run python examples/run_pipeline.py --azure-default
 
 # Use Azure OpenAI fast configuration
-poetry run python run_pipeline.py --azure-fast
+poetry run python examples/run_pipeline.py --azure-fast
 ```
 
 ## 📁 Project Structure
@@ -229,9 +229,8 @@ The project includes a dedicated tool for inspecting and managing ChromaDB colle
 
 ```bash
 # List all collections
-python inspect_chroma.py --list
+poetry run python rag_pipeline/tools/inspect_chroma.py --list
 
 # View documents in a specific collection
-python inspect_chroma.py --collection your_collection_name
-
+poetry run python rag_pipeline/tools/inspect_chroma.py --collection your_collection_name
 ```
