@@ -8,7 +8,7 @@ from typing import List, Optional
 from llama_index.core import SimpleDirectoryReader, Document
 from llama_index.readers.file import PDFReader, DocxReader
 
-from .config import get_file_types
+from ..config import get_file_types
 
 
 class DataLoader:

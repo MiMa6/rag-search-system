@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import the RAG pipeline components
-from rag_pipeline.query_engine import RAGQueryEngine
+from rag_pipeline.engine.query_engine import RAGQueryEngine
 import chromadb
 from rag_pipeline.config import CHROMA_CONFIG
 

@@ -24,9 +24,10 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.readers.file import PDFReader, DocxReader
 import chromadb
 
-from .config import (
+from ..config import (
     get_model_config,
     get_file_types,
+    MODEL_CONFIGS,
     CHROMA_CONFIG,
     QUERY_CONFIG,
 )
