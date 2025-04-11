@@ -21,16 +21,6 @@ def main():
         help="Use default configuration (gpt-4o + text-embedding-3-large)",
     )
     model_group.add_argument(
-        "--fast",
-        action="store_true",
-        help="Use fast configuration (gpt-4 + text-embedding-3-small)",
-    )
-    model_group.add_argument(
-        "--legacy",
-        action="store_true",
-        help="Use legacy configuration (gpt-3.5-turbo + text-embedding-3-small)",
-    )
-    model_group.add_argument(
         "--azure-default",
         action="store_true",
         help="Use Azure OpenAI default configuration",
@@ -54,6 +44,20 @@ def main():
         help="File types to process",
     )
 
+    parser.add_argument(
+        "--collection-name",
+        type=str,
+        default="rag_pipeline/data/test_docs",
+        help="Collection name",
+    )
+
+    # Add flag to make progam interactive and user input instead of using example queistons
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Run the program in interactive mode",
+    )
+
     args = parser.parse_args()
 
     # Determine model configuration
@@ -70,7 +74,10 @@ def main():
 
     # Initialize pipeline
     pipeline = RAGPipeline(
-        data_dir=args.data_dir, model_config=model_config, file_types=args.file_types
+        data_dir=args.data_dir,
+        collection_name=args.collection_name,
+        model_config=model_config,
+        file_types=args.file_types,
     )
 
     # Load and process documents
@@ -85,15 +92,26 @@ def main():
         "Identify any documents that could be considered outdated and should be archived, explaining why.",
     ]
 
-    # Query the documents using selected configuration
     print(f"\n{'='*80}")
     print(f"Using {pipeline.collection_name} pipeline ({model_config} configuration)")
     print(f"{'='*80}")
-    for question in questions:
-        print(f"\nQuestion: {question}")
-        print("-" * 80)
-        response = pipeline.query(question)
-        print(f"Answer: {response}")
+
+    if args.interactive:
+        while True:
+            user_question = input("\nEnter your question (or 'quit' to exit): ").strip()
+            if user_question.lower() == "quit":
+                break
+            if not user_question:
+                continue
+            print("-" * 80)
+            response = pipeline.query(user_question)
+            print(f"Answer: {response}")
+    else:
+        for question in questions:
+            print(f"\nQuestion: {question}")
+            print("-" * 80)
+            response = pipeline.query(question)
+            print(f"Answer: {response}")
 
 
 if __name__ == "__main__":

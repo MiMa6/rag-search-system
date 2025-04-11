@@ -3,7 +3,7 @@ ChromaDB collection management for the RAG pipeline.
 """
 
 import os
-from typing import List
+from typing import List, Optional
 
 from llama_index.core import Settings, StorageContext, VectorStoreIndex, Document
 from llama_index.core.node_parser import SentenceSplitter
@@ -12,15 +12,15 @@ from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
-from ..config import get_model_config, CHROMA_CONFIG
+from ..config import get_model_config, CHROMA_CONFIG, NODE_PARSER_CONFIG
 
 
 class ChromaDBManager:
-    """Handle ChromaDB collection management."""
+    """Handle ChromaDB collection management and vector store operations."""
 
     def __init__(
         self,
-        collection_name: str = None,
+        collection_name: Optional[str] = None,
         model_config: str = "default",
     ):
         """
@@ -30,35 +30,30 @@ class ChromaDBManager:
             collection_name (str): Name for the ChromaDB collection (optional)
             model_config (str): Name of the model configuration to use
         """
-        # Get model configuration
+        # Get model configuration for embedding setup
         model_settings = get_model_config(model_config)
         self.provider = model_settings["provider"]
-        self.model_name = model_settings["llm_model"]
         self.embedding_model = model_settings["embedding_model"]
-        self.model_config = model_config
 
         # Setup collection name
         if collection_name is None:
             collection_name = f"{CHROMA_CONFIG['collection_prefix']}_{model_config}"
         self.collection_name = collection_name
 
-        # Initialize ChromaDB client
+        # Initialize ChromaDB components
         self.chroma_client = chromadb.PersistentClient(
             path=CHROMA_CONFIG["persist_directory"]
         )
         self.chroma_collection = self.chroma_client.get_or_create_collection(
             name=self.collection_name
         )
-
-        # Setup vector store
         self.vector_store = ChromaVectorStore(chroma_collection=self.chroma_collection)
         self.storage_context = StorageContext.from_defaults(
             vector_store=self.vector_store
         )
 
-        # Setup embedding based on provider
+        # Setup embedding model based on provider
         if self.provider == "azure":
-            # Azure OpenAI setup
             self.embed_model = AzureOpenAIEmbedding(
                 model=self.embedding_model,
                 deployment_name=self.embedding_model,
@@ -67,14 +62,13 @@ class ChromaDBManager:
                 api_version=model_settings["api_version"],
             )
         else:
-            # OpenAI setup
             self.embed_model = OpenAIEmbedding(
                 model=self.embedding_model, mode=OpenAIEmbeddingMode.SIMILARITY_MODE
             )
 
-        # Set global embedding model
+        # Set global settings for embedding and node parsing
         Settings.embed_model = self.embed_model
-        Settings.node_parser = SentenceSplitter()
+        Settings.node_parser = SentenceSplitter(**NODE_PARSER_CONFIG)
 
     def create_index(self, documents: List[Document]) -> VectorStoreIndex:
         """
@@ -95,35 +89,35 @@ class ChromaDBManager:
         )
         return index
 
-    def get_existing_index(self) -> VectorStoreIndex:
+    def get_existing_index(self) -> Optional[VectorStoreIndex]:
         """
         Load an existing index from the persistent store.
 
         Returns:
-            VectorStoreIndex: The loaded index
+            VectorStoreIndex: The loaded index, or None if collection doesn't exist or is empty
         """
-        # Check if the collection exists and has documents
-        collections = [c.name for c in self.chroma_client.list_collections()]
-        if self.collection_name not in collections:
-            print(f"\nError: Collection '{self.collection_name}' does not exist.")
-            print(
-                "\nTip: Run 'python example_create_index.py' to create an index first."
-            )
+        if self.collection_name not in [
+            c.name for c in self.chroma_client.list_collections()
+        ]:
             return None
 
-        # Check if collection has documents
-        collection = self.chroma_client.get_collection(self.collection_name)
-        if collection.count() == 0:
-            print(
-                f"\nError: Collection '{self.collection_name}' exists but has no documents."
-            )
-            print(
-                "\nTip: Run 'python example_create_index.py' to create an index with documents."
-            )
+        if self.chroma_collection.count() == 0:
             return None
 
-        # Use the VectorStoreIndex.from_vector_store method instead
-        # This properly reconstructs the index from the vector store
         return VectorStoreIndex.from_vector_store(
             vector_store=self.vector_store,
         )
+
+    def get_document_count(self) -> int:
+        """
+        Get the number of documents in the collection.
+
+        Returns:
+            int: Number of documents in the collection
+        """
+        return self.chroma_collection.count()
+
+    def delete_collection(self) -> None:
+        """Delete the current collection."""
+        self.chroma_client.delete_collection(self.collection_name)
+        print(f"Deleted collection '{self.collection_name}'")
