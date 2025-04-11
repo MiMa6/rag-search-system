@@ -79,6 +79,13 @@ QUERY_CONFIG = {
     "supported_response_modes": ["compact", "refine", "tree_summarize"],
 }
 
+# Node parser configuration
+NODE_PARSER_CONFIG = {
+    "chunk_size": 512,  # Smaller chunk size for more granular splitting
+    "chunk_overlap": 50,  # Overlap to maintain context between chunks
+    "separator": " ",  # Split on spaces if no sentence boundaries found
+}
+
 
 def get_model_config(config_name: str = "default") -> Dict[str, str]:
     """

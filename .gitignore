@@ -2,6 +2,7 @@
 Local/
 chroma_db
 .cursor/
+tmp.py
 
 # Cursor specific files
 .cursorrules
