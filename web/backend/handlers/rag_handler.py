@@ -14,7 +14,7 @@ root_dir = current_dir.parent.parent.parent
 sys.path.append(str(root_dir))
 
 try:
-    from rag_pipeline.query_engine import RAGQueryEngine
+    from rag_pipeline.engine.query_engine import RAGQueryEngine
 except ImportError as e:
     logger.error(f"Failed to import RAGQueryEngine: {e}")
     raise
@@ -23,10 +23,33 @@ except ImportError as e:
 class RAGHandler:
     """Handler for RAG queries"""
 
-    def __init__(self, collection_name: str = "test_docs_eng_2"):
+    def __init__(self, collection_name: str = "test_colection"):
         """Initialize the RAG handler with specified collection"""
         self.collection_name = collection_name
         self._query_engine = None
+
+    @staticmethod
+    def list_collections() -> dict:
+        """
+        List all available collections in ChromaDB
+
+        Returns:
+            dict: Response containing success status and list of collections
+        """
+        try:
+            # Change to the root directory to ensure ChromaDB can find its files
+            os.chdir(root_dir)
+            from rag_pipeline.engine.query_engine import get_chroma_client
+
+            client = get_chroma_client()
+            collections = client.list_collections()
+            collection_names = [col.name for col in collections]
+
+            logger.info(f"Found collections: {collection_names}")
+            return {"success": True, "collections": collection_names}
+        except Exception as e:
+            logger.error(f"Error listing collections: {e}")
+            return {"success": False, "error": str(e)}
 
     @property
     def query_engine(self):
@@ -67,8 +90,18 @@ class RAGHandler:
 
 # For command line testing
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        handler = RAGHandler()
-        result = handler.handle_query(sys.argv[1])
-        # Print as JSON string for the Node.js server to parse
+    if len(sys.argv) > 2:  # Check for both question and collection
+        question = sys.argv[1]
+        collection = sys.argv[2]
+        handler = RAGHandler(collection_name=collection)
+        result = handler.handle_query(question)
         print(json.dumps(result))
+    else:
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": "Both question and collection name are required",
+                }
+            )
+        )
